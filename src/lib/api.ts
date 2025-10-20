@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+// On Vercel, we expose API as Serverless Functions under /api
+const API_BASE = (import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '') || '';
 
 async function http(path: string, options: RequestInit = {}) {
   const url = `${API_BASE}${path}`;
