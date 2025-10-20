@@ -26,8 +26,12 @@ COPY --from=webbuild /app/dist /app/dist
 # Python deps
 RUN pip install --no-cache-dir -r /app/backend-web-produksi/requirements.txt
 
+# Generate Prisma Python client (uses schema at backend-web-produksi/prisma/schema.prisma)
+RUN python -m prisma generate --schema /app/backend-web-produksi/prisma/schema.prisma || true
+
 # Expose port
 EXPOSE 8080
 
 # Start uvicorn; app serves SPA from /app/dist via main.py
-CMD ["uvicorn", "backend-web-produksi.app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Use PORT env if provided by platform (Koyeb, Render, etc.), default 8080
+CMD ["sh", "-c", "uvicorn backend-web-produksi.app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

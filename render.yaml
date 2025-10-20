@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: erp-sakura
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    # If you later use Postgres, set DATABASE_URL here via dashboard or envVars below
+    envVars:
+      - key: PORT
+        value: 8080
