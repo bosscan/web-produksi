@@ -1,5 +1,8 @@
 # Exclude backend sources and local artifacts from deployment
-backend-web-produksi/
+backend-web-produksi/app/
+backend-web-produksi/config/
+backend-web-produksi/prisma/*.db
+backend-web-produksi/prisma/*.db-journal
 **/*.db
 **/*.db-journal
 **/docker-compose.yml

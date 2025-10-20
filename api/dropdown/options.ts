@@ -1,4 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -59,7 +58,7 @@ const KEY_TO_ENUM: Record<string, string> = {
   gantungan_ht: 'GantunganHT',
 };
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req: any, res: any) {
   try {
     const enums = parsePrismaEnums();
     const items: Array<{ attribute: string; value: string; label: string; is_active: boolean }> = [];
