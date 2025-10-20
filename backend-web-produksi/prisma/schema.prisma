@@ -1,0 +1,1143 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator db {
+    provider             = "prisma-client-py"
+    recursive_type_depth = 5
+}
+
+model user {
+    id         Int      @id @default(autoincrement())
+    username   String   @unique
+    password   String
+    nama       String   @unique
+    role       String
+    created_at DateTime @default(now())
+
+    antrian_input_desain                   antrian_input_desain[]
+    antrian_pengerjaan_desain              antrian_pengerjaan_desain[]
+    antrian_pra_produksi                   antrian_pra_produksi[]
+    antrian_pengerjaan_desain_pra_produksi antrian_pengerjaan_desain_pra_produksi[]
+
+    antrian_revisi_pra_produksi                   antrian_revisi_pra_produksi[]
+    antrian_pengerjaan_revisi_desain_pra_produksi antrian_pengerjaan_revisi_desain_pra_produksi[]
+
+    @@unique([id, nama], map: "user_cs")
+}
+
+model data_konsumen {
+    id           Int      @id @default(autoincrement())
+    nama_pemesan String   @unique
+    alamat       String
+    provinsi     String
+    kabupaten    String
+    kecamatan    String
+    desa         String
+    nomer_hp     Int
+    konten       String
+    created_at   DateTime @default(now())
+
+    data_pesanan         data_pesanan[]
+    antrian_input_desain antrian_input_desain[]
+    database_konsumen    database_konsumen[]
+
+    @@unique([id, nama_pemesan], map: "data_konsumen_unique")
+    @@unique([id, nama_pemesan, nomer_hp, alamat, created_at], map: "data_konsumen_all")
+}
+
+model data_pesanan {
+    id                Int      @id @default(autoincrement())
+    id_pemesan        Int
+    quantity          Int
+    tipe_transaksi    String
+    nominal_transaksi Float
+    bukti_transaksi   Bytes
+    created_at        DateTime @default(now())
+
+    antrian_input_desain antrian_input_desain[]
+    list_pesanan         list_pesanan[]
+    keranjang            keranjang[]
+
+    data_konsumen         data_konsumen           @relation(fields: [id_pemesan], references: [id])
+    plotting_rekap_bordir plotting_rekap_bordir[]
+
+    @@unique([id, created_at], map: "data_pesanan_tipe_created")
+    @@unique([id, quantity, tipe_transaksi, created_at], map: "data_pesanan_antrian")
+    @@unique([id, quantity], map: "data_pesanan_keranjang")
+}
+
+model list_pesanan {
+    id              Int      @id @default(autoincrement())
+    id_data_pesanan Int
+    size            String
+    nama            String
+    format_nama     String
+    created_at      DateTime @default(now())
+
+    data_pesanan data_pesanan @relation(fields: [id_data_pesanan], references: [id])
+}
+
+model antrian_input_desain {
+    id                    Int      @id @default(autoincrement())
+    id_cs                 Int
+    id_pemesan            Int
+    id_data_pesanan       Int
+    no_spk                String
+    nama_pemesan          String
+    quantity              Int
+    tipe_transaksi        String
+    nama_cs               String
+    tanggal_input_pesanan DateTime
+
+    input_desain                  input_desain[]
+    antrian_pengerjaan_desain     antrian_pengerjaan_desain[]
+    keranjang                     keranjang[]
+    database_produk               database_produk[]
+    plotting_rekap_bordir         plotting_rekap_bordir[]
+    list_rekap_bordir             list_rekap_bordir[]
+    antrian_desain_produksi       antrian_desain_produksi[]
+    antrian_cutting_pola          antrian_cutting_pola[]
+    antrian_stock_bordir          antrian_stock_bordir[]
+    antrian_bordir                antrian_bordir[]
+    antrian_setting               antrian_setting[]
+    antrian_stock_jahit           antrian_stock_jahit[]
+    antrian_jahit                 antrian_jahit[]
+    antrian_finishing             antrian_finishing[]
+    antrian_foto_produk           antrian_foto_produk[]
+    antrian_stock_nomer_transaksi antrian_stock_nomer_transaksi[]
+    antrian_pengiriman            antrian_pengiriman[]
+
+    data_pesanan                           data_pesanan                             @relation(fields: [id_data_pesanan, quantity, tipe_transaksi, tanggal_input_pesanan], references: [id, quantity, tipe_transaksi, created_at])
+    data_konsumen                          data_konsumen                            @relation(fields: [id_pemesan, nama_pemesan], references: [id, nama_pemesan])
+    user                                   user                                     @relation(fields: [id_cs, nama_cs], references: [id, nama])
+    antrian_pengerjaan_desain_pra_produksi antrian_pengerjaan_desain_pra_produksi[]
+
+    @@unique([quantity, tanggal_input_pesanan], map: "antrian_input_desain_pesanan")
+    @@unique([nama_pemesan], map: "antrian_input_desain_pemesan")
+    @@unique([nama_cs], map: "antrian_input_desain_cs")
+    @@unique([id, no_spk], map: "antrian_input_desain_spk")
+}
+
+enum JenisProduk {
+    KAOS
+    JAKET
+    CELANA
+    KEMEJA
+    POLO
+}
+
+enum JenisPola {
+    KAOS
+    POLO
+    PDH
+    TACTICAL
+    TACTICAL_GASENDRA
+    TACTICAL_KJ
+    SAFETY
+    PETROSEA
+    BERAU
+    ADARO
+    KPC_2_WARNA
+    GRASBERG
+}
+
+enum JenisKain {
+    AMERICAN_DRILL
+    NAGATA_DRILL
+    TEXMOODA
+    BABY_CANVAS
+    TASLAN_BALOON
+    TASLAN_MILKY
+    COMBED_30S
+    COMBED_24S
+    LACOSTE_PE
+    LACOSTE_COTTTON
+}
+
+enum Hoodie {
+    PATEN
+    LEPAS_PASANG
+}
+
+enum SakuBawah {
+    TIDAK
+    TANPA_ZIPPER
+    PAKAI_ZIPPER
+}
+
+enum TaliBawah {
+    TIDAK
+    PAKAI_TALI
+}
+
+enum SakuFuring {
+    TIDAK
+    KANAN_KIRI
+    KANAN
+    KIRI
+}
+
+enum UjungLengan {
+    TIDAK
+    VELCRO
+    KERUT_VELCRO
+    KERUT
+    MANSET
+    MANSET_PENDEK
+    MANSET_BUR
+}
+
+enum Aplikasi {
+    TIDAK
+    BORDIR
+    SABLON
+    KOMBINASI
+}
+
+enum JenisBordir {
+    TIDAK
+    LANGUNG
+    TIMBUL
+    BADGE
+}
+
+enum WarnaListReflektor {
+    TIDAK
+    HIJAU_STABILO
+    KUNING_STABILO
+    ORANGE_STABILO
+    MERAH
+    BIRU
+}
+
+enum Plaket {
+    TIDAK
+    KNOP_DALAM
+    KNOP_LUAR
+    VELCRO
+}
+
+enum PotonganBawah {
+    LURUS
+    LENGKUNG
+}
+
+enum Skoder {
+    TIDAK
+    PAKAI
+}
+
+enum Saku {
+    STANDAR_POLA
+    GELEMBUNG
+    DALAM
+    TEMPEL
+}
+
+enum VariasiSaku {
+    TIDAK
+    HIDUP
+    MATI
+    STANDAR_POLA
+}
+
+enum KancingDepan {
+    LUAR
+    DALAM
+    ZIPPER_LUAR
+    ZIPPER_DALAM
+    ZIPPER_PLAKET
+}
+
+enum TaliLengan {
+    TIDAK
+    PAKAI
+}
+
+enum Ventilasi {
+    TIDAK
+    PAKAI
+    VERTIKAL
+    HORIZONTAL
+    KETIAK
+    VERT_KETIAK
+    HORZ_KETIAK
+}
+
+enum TempatPulpen {
+    TIDAK
+    SAKU_KANAN
+    SAKU_KIRI
+    LENGAN_KANAN
+    LENGAN_KIRI
+    KOMBINASI
+}
+
+enum LidahKucing {
+    TIDAK
+    PAKAI
+}
+
+enum BanBawah {
+    TIDAK
+    PAKAI
+}
+
+enum Kerah {
+    TEGAK
+    STANDAR
+    O_NECK
+    V_NECK
+    SHANGHAI
+    JADI
+    BIKIN
+}
+
+enum BelahanSamping {
+    TIDAK
+    PAKAI
+}
+
+enum JenisSablon {
+    DTF
+    RUBBER
+    PLASTISOL
+    KOMBINASI
+}
+
+enum TempatLanyard {
+    TIDAK
+    PAKAI
+}
+
+enum GantunganHT {
+    TIDAK
+    DADA_KIRI
+    DADA_KANAN
+    LENGAN_KIRI
+    LENGAN_KANAN
+}
+
+enum Sample {
+    ADA
+    TIDAK
+}
+
+model input_desain {
+    id                      Int         @id @default(autoincrement())
+    id_antrian_input_desain Int
+    no_spk                  String
+    //spesifikasi desain
+    nama_desain             String
+    sample                  Sample
+    jenis_produk            JenisProduk
+    jenis_pola              JenisPola
+    jenis_kain              JenisKain
+    warna_kain              String
+    kombinasi_warna         String
+    kode_warna              String
+
+    //detail produk
+    aplikasi        Aplikasi
+    jenis_bordir    JenisBordir
+    jenis_sablon    JenisSablon
+    hoodie          Hoodie
+    potongan_bawah  PotonganBawah
+    belahan_samping BelahanSamping
+    kerah           Kerah
+    plaket          Plaket
+    saku            Saku
+    saku_bawah      SakuBawah
+    saku_furing     SakuFuring
+    ujung_lengan    UjungLengan
+    kancing_depan   KancingDepan
+
+    // detail tambahan
+    tali_tambahan        String
+    tali_lengan          TaliLengan
+    ban_bawah            BanBawah
+    skoder               Skoder
+    varian_saku          VariasiSaku
+    jenis_reflektor      String
+    warna_list_reflektor WarnaListReflektor
+    ventilasi            Ventilasi
+    tempat_pulpen        TempatPulpen
+    lidah_kucing         LidahKucing
+    tempat_lanyard       TempatLanyard
+    gantungan_ht         GantunganHT
+
+    //atribut desain
+    atribut_dada_kanan    Bytes
+    ukuran_dada_kanan     Int
+    jarak_dada_kanan      String
+    keterangan_dada_kanan String
+
+    atribut_dada_kiri    Bytes
+    ukuran_dada_kiri     Int
+    jarak_dada_kiri      String
+    keterangan_dada_kiri String
+
+    atribut_lengan_kanan    Bytes
+    ukuran_lengan_kanan     Int
+    jarak_lengan_kanan      String
+    keterangan_lengan_kanan String
+
+    atribut_lengan_kiri    Bytes
+    ukuran_lengan_kiri     Int
+    jarak_lengan_kiri      String
+    keterangan_lengan_kiri String
+
+    atribut_belakang    Bytes
+    ukuran_belakang     Int
+    jarak_belakang      String
+    keterangan_belakang String
+
+    atribut_tambahan    Bytes
+    ukuran_tambahan     Int
+    jarak_tambahan      String
+    keterangan_tambahan String
+
+    atribut_referensi    Bytes
+    ukuran_referensi     Int
+    jarak_referensi      String
+    keterangan_referensi String
+
+    catatan    String
+    created_at DateTime @default(now())
+
+    keranjang keranjang[]
+
+    antrian_input_desain antrian_input_desain @relation(fields: [id_antrian_input_desain, no_spk], references: [id, no_spk])
+
+    antrian_pengerjaan_desain                     antrian_pengerjaan_desain[]
+    antrian_pra_produksi                          antrian_pra_produksi[]
+    antrian_pengerjaan_desain_pra_produksi        antrian_pengerjaan_desain_pra_produksi[]
+    antrian_pengerjaan_revisi_desain_pra_produksi antrian_pengerjaan_revisi_desain_pra_produksi[]
+    antrian_revisi_pra_produksi                   antrian_revisi_pra_produksi[]
+    database_trend                                database_trend[]
+    plotting_rekap_bordir                         plotting_rekap_bordir[]
+    antrian_desain_produksi                       antrian_desain_produksi[]
+    antrian_cutting_pola                          antrian_cutting_pola[]
+    antrian_stock_bordir                          antrian_stock_bordir[]
+    antrian_bordir                                antrian_bordir[]
+    antrian_setting                               antrian_setting[]
+    antrian_stock_jahit                           antrian_stock_jahit[]
+    antrian_jahit                                 antrian_jahit[]
+    antrian_finishing                             antrian_finishing[]
+    antrian_foto_produk                           antrian_foto_produk[]
+    antrian_stock_nomer_transaksi                 antrian_stock_nomer_transaksi[]
+    antrian_pengiriman                            antrian_pengiriman[]
+    database_produk                               database_produk[]
+
+    @@unique([id, nama_desain, jenis_produk, jenis_pola], map: "spesifikasi_desain_nama")
+    @@unique([created_at], map: "spesifikasi_desain_created_at")
+    @@unique([id, nama_desain, created_at], map: "spesifikasi_desain_nama_created_at")
+    @@unique([id, nama_desain, created_at, jenis_pola, jenis_produk])
+    @@unique([id, jenis_produk, jenis_pola], map: "spesifikasi_desain_jenis")
+    @@unique([id, nama_desain])
+}
+
+//status antrian pengerjaan desain
+enum StatusDesain {
+    SELESAI
+    ANTRIAN_REVISI
+    DESAIN_DIVALIDASI
+    PENDING
+}
+
+enum ActionDesain {
+    REVISI
+    VALIDASI
+}
+
+model antrian_pengerjaan_desain {
+    id                      Int          @id @default(autoincrement())
+    id_antrian_input_desain Int
+    id_desain               Int
+    id_cs                   Int
+    id_rekap_custom         String
+    no_spk                  String
+    id_custom               String
+    nama_desain             String
+    tanggal_input_desain    DateTime
+    nama_cs                 String
+    status_desain           StatusDesain @default(PENDING)
+    view_mockup             Bytes
+    action                  ActionDesain
+    created_at              DateTime     @default(now())
+    updated_at              DateTime     @updatedAt
+
+    antrian_pra_produksi                          antrian_pra_produksi[]
+    antrian_pengerjaan_desain_pra_produksi        antrian_pengerjaan_desain_pra_produksi[]
+    keranjang                                     keranjang[]
+    antrian_desain_produksi                       antrian_desain_produksi[]
+    antrian_cutting_pola                          antrian_cutting_pola[]
+    antrian_stock_bordir                          antrian_stock_bordir[]
+    antrian_bordir                                antrian_bordir[]
+    antrian_setting                               antrian_setting[]
+    antrian_stock_jahit                           antrian_stock_jahit[]
+    antrian_jahit                                 antrian_jahit[]
+    antrian_finishing                             antrian_finishing[]
+    antrian_foto_produk                           antrian_foto_produk[]
+    antrian_pengiriman                            antrian_pengiriman[]
+    antrian_pengerjaan_revisi_desain_pra_produksi antrian_pengerjaan_revisi_desain_pra_produksi[]
+    antrian_stock_nomer_transaksi                 antrian_stock_nomer_transaksi[]
+    plotting_rekap_bordir                         plotting_rekap_bordir[]
+    list_rekap_bordir                             list_rekap_bordir[]
+
+    antrian_input_desain        antrian_input_desain          @relation(fields: [id_antrian_input_desain, no_spk], references: [id, no_spk])
+    input_desain                input_desain                  @relation(fields: [id_desain, nama_desain, tanggal_input_desain], references: [id, nama_desain, created_at])
+    user                        user                          @relation(fields: [id_cs, nama_cs], references: [id, nama])
+    antrian_revisi_pra_produksi antrian_revisi_pra_produksi[]
+
+    @@unique([id, id_rekap_custom, id_custom], map: "antrian_pengerjaan_desain_rekap")
+}
+
+model keranjang {
+    id                           Int       @id @default(autoincrement())
+    id_data_pesanan              Int
+    id_antrian_pengerjaan_desain Int
+    id_antrian_input_desain      Int
+    id_rekap_custom              String // maps to idRekap
+    id_input_desain              Int
+    id_spk                       String // 7-digit SPK
+    id_custom                    String
+    nama_desain                  String
+    nama_konsumen                String
+    quantity                     Int
+    selected                     Boolean   @default(false)
+    checked_out_at               DateTime?
+    created_at                   DateTime  @default(now())
+    updated_at                   DateTime  @updatedAt
+
+    // relations (optional, for traceability)
+    data_pesanan              data_pesanan              @relation(fields: [id_data_pesanan, quantity], references: [id, quantity])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain], references: [id, nama_desain])
+
+    @@unique([id], map: "keranjang_id")
+    @@index([checked_out_at])
+    @@index([selected, checked_out_at])
+}
+
+model list_cpk_on_proses {
+    id                        Int           @id @default(autoincrement())
+    id_transaksi              String
+    jumlah_spk                Int
+    id_rekap_custom           String
+    nama_desain               String
+    quantity                  Int
+    status                    StatusPesanan
+    status_konten             String
+    tanggal_input_pesanan     DateTime
+    deadline_konsumen         DateTime
+    tanggal_spk_terbit        DateTime
+    selesai_plotting_produksi DateTime?
+    selesai_desain_produksi   DateTime?
+    selesai_cutting_pola      DateTime?
+    selesai_stock_bordir      DateTime?
+    selesai_bordir            DateTime?
+    selesai_setting           DateTime?
+    selesai_stock_jahit       DateTime?
+    selesai_jahit             DateTime?
+    selesai_foto_produk       DateTime?
+    selesai_stock_NT          DateTime?
+    selesai_pelunasan         DateTime?
+    selesai_pengiriman        DateTime?
+    updated_at                DateTime      @updatedAt
+    created_at                DateTime      @default(now())
+}
+
+model database_konsumen {
+    id_data_konsumen Int
+    nama             String
+    telepon          Int
+    alamat           String
+    tanggal_input    DateTime // stored as YYYY-MM-DD in UI
+
+    data_konsumen data_konsumen @relation(fields: [id_data_konsumen, nama, telepon, alamat, tanggal_input], references: [id, nama_pemesan, nomer_hp, alamat, created_at])
+
+    @@id([id_data_konsumen, nama, telepon, alamat, tanggal_input])
+}
+
+// MARKET: Trend Pesanan (mirrors frontend localStorage 'database_trend')
+model database_trend {
+    id              Int         @id @default(autoincrement())
+    id_input_desain Int
+    jenis_produk    JenisProduk
+    jenis_pola      JenisPola
+    quantity        Int         @default(0) // numeric string as stored in UI
+    updatedAt       DateTime    @updatedAt
+
+    input_desain input_desain @relation(fields: [id_input_desain, jenis_produk, jenis_pola], references: [id, jenis_produk, jenis_pola])
+}
+
+enum StatusPesanan {
+    DESAIN_PRODUKSI
+    CUTTING_POLA
+    STOCK_BORDIR
+    BORDIR
+    SETTING
+    STOCK_JAHIT
+    JAHIT
+    FINISHING
+    FOTO_PRODUK
+    STOCK_NT
+    PELUNASAN
+    PENGIRIMAN
+}
+
+// METHOD: Plotting Rekap Bordir (queue)
+model plotting_rekap_bordir {
+    id                           Int          @id @default(autoincrement())
+    id_checkout_batch            Int
+    id_data_pesanan              Int
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_rekap_produksi            String
+    id_transaksi                 String
+    jumlah_spk                   Int
+    no_spk                       String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    quantity                     Int
+    status_desain                StatusDesain
+
+    status_pesanan StatusPesanan
+    created_at     DateTime      @default(now())
+    updated_at     DateTime      @updatedAt
+
+    data_pesanan              data_pesanan              @relation(fields: [id_data_pesanan, quantity], references: [id, quantity])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain], references: [id, nama_desain])
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, no_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    list_rekap_bordir         list_rekap_bordir[]
+
+    @@unique([id])
+    @@index([nama_desain])
+}
+
+model list_rekap_bordir {
+    id                       Int    @id @default(autoincrement())
+    id_checkout_batch        Int
+    id_plotting_rekap_bordir Int
+    id_rekap_bordir          String
+    jumlah_spk               Int
+    list_spk                 String
+    quantity_spk             Int
+    total_quantity           Int
+
+    plotting_rekap_bordir       plotting_rekap_bordir      @relation(fields: [id_plotting_rekap_bordir], references: [id])
+    antrian_input_desain        antrian_input_desain?      @relation(fields: [antrian_input_desainId], references: [id])
+    antrian_input_desainId      Int?
+    antrian_pengerjaan_desain   antrian_pengerjaan_desain? @relation(fields: [antrian_pengerjaan_desainId], references: [id])
+    antrian_pengerjaan_desainId Int?
+}
+
+// ====================================================================
+// METHOD: Antrian per Divisi (mirror PipelineItem + relasi)
+// ====================================================================
+
+model antrian_pengerjaan_desain_pra_produksi {
+    id                           Int         @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_user                      Int
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input_desain         DateTime
+    nama_cs                      String
+    asset_desain                 Int
+    kerjakan                     Boolean     @default(false)
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain], references: [id])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, tanggal_input_desain, jenis_pola, jenis_produk], references: [id, nama_desain, created_at, jenis_pola, jenis_produk])
+    user                      user                      @relation(fields: [id_user, nama_cs], references: [id, nama])
+}
+
+model antrian_pengerjaan_revisi_desain_pra_produksi {
+    id                           Int         @id @default(autoincrement())
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_user                      Int
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input_desain         DateTime
+    nama_cs                      String
+    asset_desain                 Int
+    detail_revisi                String
+    kerjakan                     Boolean     @default(false)
+
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, tanggal_input_desain, jenis_pola, jenis_produk], references: [id, nama_desain, created_at, jenis_pola, jenis_produk])
+    user                      user                      @relation(fields: [id_user, nama_cs], references: [id, nama])
+}
+
+enum StatusPraProduksi {
+    SELESAI
+    BELUM_SELESAI
+}
+
+model antrian_desain_produksi {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_cutting_pola {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_stock_bordir {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_bordir {
+    id                           Int          @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusDesain @default(PENDING)
+    created_at                   DateTime     @default(now())
+    updated_at                   DateTime     @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_setting {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_stock_jahit {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_jahit {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_finishing {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_foto_produk {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_stock_nomer_transaksi {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model antrian_pengiriman {
+    id                           Int               @id @default(autoincrement())
+    id_antrian_input_desain      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_spk                       String
+    id_transaksi                 String
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input                String
+    kuantity                     Int?
+    status                       StatusPraProduksi @default(BELUM_SELESAI)
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_input_desain      antrian_input_desain      @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, jenis_produk, jenis_pola], references: [id, nama_desain, jenis_produk, jenis_pola])
+}
+
+model report_pendapatan {
+    id             Int       @id @default(autoincrement())
+    date           DateTime?
+    slot_dp        Int?
+    omset_dp       Int?
+    slot_pelunasan Int?
+    slot_dpl       Int?
+    omset_dpl      Float?
+    slot_kumulatif Float?
+    timestamp      DateTime  @default(now())
+    created_at     DateTime  @default(now())
+    updated_at     DateTime  @updatedAt
+
+    // link to konsolidasi per day (optional)
+    konsolidasi_date_key String?
+
+    @@unique([date])
+}
+
+model pengeluaran_maintenance_mesin {
+    id         Int      @id @default(autoincrement())
+    tanggal    DateTime
+    mesin      String
+    pekerjaan  String
+    vendor     String
+    amount     Float
+    note       String?
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+}
+
+model pengeluaran_overhead_pabrik {
+    id         Int      @id @default(autoincrement())
+    tanggal    DateTime
+    kategori   String
+    uraian     String
+    nominal    Float
+    catatan    String
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+}
+
+model pengeluaran_gaji {
+    id         Int      @id @default(autoincrement())
+    tanggal    DateTime
+    karyawan   String
+    divisi     String
+    gaji_pokok Float
+    lembur     Float
+    bonus      Float
+    potongan   Float
+    total      Float
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+}
+
+model pengeluaran_belanja_logistik {
+    id         Int      @id @default(autoincrement())
+    tanggal    DateTime
+    kategori   String
+    uraian     String
+    quantity   Int
+    unit       String
+    harga      Float
+    catatan    String?
+    total      Float
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+}
+
+model pengeluaran_fee_jaringan {
+    id         Int      @id @default(autoincrement())
+    tanggal    DateTime
+    partner    String
+    uraian     String
+    nominal    Float
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+}
+
+model pengeluaran_biaya_marketing {
+    id          Int      @id @default(autoincrement())
+    channel     String
+    campaign    String
+    pengeluaran Float
+    catatan     String?
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+}
+
+model pengeluaran_ongkir {
+    id         Int      @id @default(autoincrement())
+    tanggal    DateTime
+    ekspedisi  String
+    no_resi    String
+    tujuan     String
+    nominal    Float
+    catatan    String?
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+}
+
+model konsolidasi {
+    id                Int      @id @default(autoincrement())
+    tanggal           DateTime
+    total_pendapatan  Float
+    total_pengeluaran Float
+    total             Float
+    updated_at        DateTime @updatedAt
+}
+
+// MARKET: Database Foto Produk (mirrors frontend localStorage 'database_produk')
+model database_produk {
+    id                      Int      @id @default(autoincrement())
+    id_input_desain         Int
+    id_antrian_input_desain Int
+    id_spk                  String
+    nama_desain             String
+    foto                    Bytes
+    createdAt               DateTime @default(now())
+
+    // relation to SPK queue (optional but recommended)
+    antrian_input_desain antrian_input_desain @relation(fields: [id_antrian_input_desain, id_spk], references: [id, no_spk])
+    input_desain         input_desain         @relation(fields: [id_input_desain, nama_desain], references: [id, nama_desain])
+}
+
+// MARKET: Sebaran Wilayah Penjualan (mirrors frontend localStorage 'database_sebaran')
+model database_sebaran {
+    id              Int      @id @default(autoincrement())
+    kecamatan       String
+    kabupaten       String
+    provinsi        String
+    jumlah_konsumen Int
+    total_pesanan   Int
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([kecamatan, kabupaten, provinsi])
+}
+
+enum StatusProduksi {
+    PENDING
+    SUDAH_DIKERJAKAN
+}
+
+model antrian_pra_produksi {
+    id                           Int            @id @default(autoincrement())
+    id_user                      Int
+    id_input_desain              Int
+    id_antrian_pengerjaan_desain Int
+    id_rekap_custom              String
+    id_custom                    String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input_desain         DateTime
+    nama_cs                      String
+    asset_desain                 Int
+    status                       StatusProduksi @default(PENDING)
+    created_at                   DateTime       @default(now())
+    updated_at                   DateTime       @updatedAt
+
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    user                      user                      @relation(fields: [id_user, nama_cs], references: [id, nama])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, tanggal_input_desain], references: [id, nama_desain, created_at])
+}
+
+// METHOD: Antrian Pengerjaan Desain - Pra Produksi (mirrors frontend table fields)
+
+model antrian_revisi_pra_produksi {
+    id                           Int               @id @default(autoincrement())
+    id_user                      Int
+    id_antrian_pengerjaan_desain Int
+    id_input_desain              Int
+    id_rekap_custom              String
+    id_custom                    String
+    id_spk                       String
+    nama_desain                  String
+    jenis_produk                 JenisProduk
+    jenis_pola                   JenisPola
+    tanggal_input_desain         DateTime
+    nama_cs                      String
+    revisi_catatan               String?
+    status                       StatusProduksi    @default(PENDING)
+    link_drive_input_cs          StatusPraProduksi
+    link_drive_asset_jadi        String?
+    catatan                      String?
+    worksheet                    Bytes?
+    created_at                   DateTime          @default(now())
+    updated_at                   DateTime          @updatedAt
+
+    antrian_pengerjaan_desain antrian_pengerjaan_desain @relation(fields: [id_antrian_pengerjaan_desain, id_rekap_custom, id_custom], references: [id, id_rekap_custom, id_custom])
+    user                      user                      @relation(fields: [nama_cs], references: [nama])
+    input_desain              input_desain              @relation(fields: [id_input_desain, nama_desain, tanggal_input_desain], references: [id, nama_desain, created_at])
+
+    @@unique([id_rekap_custom, id_custom], map: "antrian_revisi_pra_produksi_unique")
+}
