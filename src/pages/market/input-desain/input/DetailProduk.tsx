@@ -33,7 +33,10 @@ export default function InputDetail() {
     useEffect(() => {
         const load = async () => {
             try {
-                const optList = await fetch('/api/dropdown/options').then(r => r.json()).catch(() => []);
+                const res = await fetch('/api/dropdown/options');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const optList = await res.json().catch(() => []);
+                if (!Array.isArray(optList)) throw new Error('Invalid response');
                 // Build map: key -> options[] (attribute key directly)
                 const map: Record<string, Array<{ value: string; label: string }>> = {};
                 (optList || []).forEach((o: any) => {
@@ -44,7 +47,8 @@ export default function InputDetail() {
                     map[key] = arr;
                 });
                 setOptions(map);
-            } catch {
+            } catch (e) {
+                console.warn('Gagal memuat opsi dropdown, gunakan default kosong.', e);
                 setOptions({});
             }
         };
