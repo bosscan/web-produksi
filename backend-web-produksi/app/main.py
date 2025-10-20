@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .db import prisma
 from .routers.market.input_desain import router as dropdown_router
@@ -52,4 +54,20 @@ if pendapatan_router is not None:
 if gaji_router is not None:
 	app.include_router(gaji_router)
 app.include_router(dropdown_router)
+
+# Serve built frontend (Vite dist) as static files with SPA fallback
+try:
+	dist_dir = Path(__file__).resolve().parents[2] / "dist"
+	if dist_dir.exists():
+		app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="static")
+
+		@app.get("/{full_path:path}")
+		async def spa_fallback(full_path: str):  # noqa: ARG001
+			index_file = dist_dir / "index.html"
+			if index_file.exists():
+				return FileResponse(str(index_file))
+			return {"message": "build not found"}
+except Exception:
+	# If dist not found, API still works (useful for local dev)
+	pass
 

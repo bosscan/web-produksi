@@ -1,0 +1,43 @@
+# fly.toml app configuration file generated for erp-sakura on 2025-10-20
+app = "erp-sakura"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+
+[[services]]
+  internal_port = 8080
+  processes = ["app"]
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [services.concurrency]
+    type = "requests"
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "10s"
+    method = "get"
+    path = "/health"
+    protocol = "http"
+
+[checks]
+  [checks.health]
+    port = 8080
+    type = "http"
+    interval = "10s"
+    timeout = "2s"
+    method = "get"
+    path = "/health"
