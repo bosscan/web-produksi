@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .db import prisma
 from .routers.market.input_desain import router as dropdown_router
@@ -36,6 +35,14 @@ app.add_middleware(
 	allow_headers=["*"],
 )
 
+# Static uploads directory
+try:
+    UPLOAD_DIR = Path(__file__).resolve().parents[1] / "uploads"
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+except Exception:
+    pass
+
 @app.on_event("startup")
 async def on_startup():
     # Skip DB connection on startup to allow stateless endpoints (like dropdowns) to work offline
@@ -55,19 +62,9 @@ if gaji_router is not None:
 	app.include_router(gaji_router)
 app.include_router(dropdown_router)
 
-# Serve built frontend (Vite dist) as static files with SPA fallback
 try:
-	dist_dir = Path(__file__).resolve().parents[2] / "dist"
-	if dist_dir.exists():
-		app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="static")
-
-		@app.get("/{full_path:path}")
-		async def spa_fallback(full_path: str):  # noqa: ARG001
-			index_file = dist_dir / "index.html"
-			if index_file.exists():
-				return FileResponse(str(index_file))
-			return {"message": "build not found"}
+	from .routers.market.landing import router as landing_router  # type: ignore
+	app.include_router(landing_router)
 except Exception:
-	# If dist not found, API still works (useful for local dev)
 	pass
 

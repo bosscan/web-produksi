@@ -49,6 +49,11 @@ const NAVIGATION = [
         icon: ''
       },
       {
+        segment: 'kelola-landing',
+        title: 'Kelola Landing Page',
+        icon: ''
+      },
+      {
         segment: 'print-spk',
         title: 'Print SPK',
         icon: ''
@@ -549,10 +554,10 @@ function App() {
 
   // Otomatis expand parent items berdasarkan current route
   useEffect(() => {
-    const pathSegments = location.pathname.split('/').filter(Boolean);
-    const newExpandedItems = { ...expandedItems };
+    const pathSegments: string[] = location.pathname.split('/').filter(Boolean);
+    const newExpandedItems: Record<string, boolean> = { ...expandedItems };
     
-    pathSegments.forEach((segment, index) => {
+    pathSegments.forEach((segment: string, index: number) => {
       if (index < pathSegments.length - 1) {
         newExpandedItems[segment] = true;
       }
@@ -576,10 +581,11 @@ function App() {
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('isAuthenticated')
     if (isAuthenticated) {
-  const userData = {}
-  setSession({ user: userData })
+      const userData = {}
+      setSession({ user: userData })
     } else {
-      navigate('/login')
+      // For unauthenticated users, show the public landing page first
+      navigate('/landing')
     }
   }, [])
 
@@ -591,7 +597,8 @@ function App() {
     signOut: async () => {
       localStorage.removeItem('isAuthenticated')
       setSession({})
-      navigate('/login')
+      // Redirect to public landing after sign out
+      navigate('/landing')
     }
   }), [])
 
@@ -609,7 +616,20 @@ function App() {
           navigate(to);
         },
       }}
-      branding={{ logo: '', title: 'SIMANTAP', homeUrl: '/' }}
+      // Clicking the app brand should go to the public landing page even when logged in
+      // Render actual logo image (bigger than landing page logo)
+      branding={{
+        logo: (
+          <Box
+            component="img"
+            src="/logo-sakura.png"
+            alt="Sakura Konveksi"
+            sx={{ height: { xs: 64, md: 72 }, width: 'auto', display: 'block' }}
+          />
+        ),
+        title: '',
+        homeUrl: '/landing',
+      }}
     >
       <Outlet />
     </AppProvider>

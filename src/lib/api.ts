@@ -1,5 +1,4 @@
-// On Vercel, we expose API as Serverless Functions under /api
-const API_BASE = (import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '') || '';
+const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
 
 async function http(path: string, options: RequestInit = {}) {
   const url = `${API_BASE}${path}`;
@@ -49,7 +48,23 @@ export const Api = {
   // Design queue (for enrichment)
   async getDesignQueue() {
     return http('/api/design-queue/');
-  }
+  },
+
+  // Landing content
+  async uploadLandingImages(files: FileList | File[]) {
+    const base = API_BASE;
+    const url = `${base}/api/landing/upload/`;
+    const fd = new FormData();
+    const arr = Array.isArray(files) ? files : Array.from(files);
+    arr.forEach((f) => fd.append('files', f));
+    const res = await fetch(url, { method: 'POST', body: fd });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    }
+    const data = await res.json();
+    return data.urls as string[];
+  },
 };
 
 export default Api;

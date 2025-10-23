@@ -15,6 +15,8 @@ import ListSPKOnProses from './pages/market/ListCPKOnProgress.tsx'
 import InputPelunasan from './pages/market/InputPelunasan.tsx'
 import PrintSPK from './pages/market/PrintSPK.tsx'
 import Login from './auth/Login.tsx'
+import Landing from './pages/Landing.tsx'
+import LandingContentEditor from './pages/market/LandingContentEditor.tsx'
 import AntrianPengerjaan from './pages/market/AntrianPengerjaan.tsx'
 import DatabaseKonsumen from './pages/market/penjualan/DatabaseKonsumen.tsx'
 import TrendPesanan from './pages/market/penjualan/TrendPesanan.tsx'
@@ -173,6 +175,10 @@ const router = createBrowserRouter([
             Component: ListSPKOnProses,
           },
           {
+            path: 'market/kelola-landing',
+            Component: LandingContentEditor,
+          },
+          {
             path: 'market/print-spk',
             Component: PrintSPK,
           },
@@ -308,6 +314,10 @@ const router = createBrowserRouter([
   {
     path: '/login',
     Component: Login,
+  },
+  {
+    path: '/landing',
+    Component: Landing,
   }
 ])
 
