@@ -46,3 +46,5 @@ venv/
 # Build artifacts
 coverage/
 *.tsbuildinfo
+
+backend-web-produksi/
